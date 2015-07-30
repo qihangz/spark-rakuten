@@ -1,0 +1,41 @@
+import TitlePreprocessing as ttp
+import romkan
+import numpy
+
+def splitWord(line):
+	vran = line[0]
+	title = line[1]
+	words = ttp.clean_title(title).split(" ")
+	words = filter(None, words)
+	for i in range(len(words)):
+		words[i] = vran + "-" + words[i]
+	return words
+
+def romanize(line):
+	parts = line.split("-")
+	return (str(parts[0]), (parts[1], romkan.to_roma(parts[1])))
+
+
+input_data = numpy.array(numpy.loadtxt("res0.csv", delimiter=",", dtype="string"))
+input_data = input_data[1:, [1, -1]]
+data = sc.parallelize(input_data, 80)
+result = data.map(splitWord).flatMap(lambda words: words).distinct().map(romanize).filter(lambda (k, v) : k == "149017772091073097").map(lambda (k, v) : v).collect()
+
+vran_dict = dict()
+
+for line in result:
+	if line[0] not in vran_dict.keys():
+		vran_dict[line[0]] = [line[1]]
+	else:
+		vran_dict[line[0]].append(line[1])
+
+
+result.map(joinWord).saveAsTextFile("item_count")
+
+
+f = open("word_149017772091073097", "w")
+for word in numpy.array(result)[:,0]:
+	f.write(word.encode('utf8'))
+	f.write("\n")
+
+f.close()

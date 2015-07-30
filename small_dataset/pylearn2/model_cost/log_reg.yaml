@@ -1,0 +1,32 @@
+!obj:pylearn2.train.Train {
+    dataset: &train !obj:dataset.TestDataset {
+        path: 'train_data.npy',
+        column : 127,
+        one_hot: 1
+    },
+    model: !obj:log_reg.LogisticRegression {
+        nvis: 385,
+        nclasses: 2,
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        batch_size: 200,
+        learning_rate: 1e-3,
+        monitoring_dataset: {
+                'train' : *train,
+                'valid' : !obj:dataset.TestDataset {
+                              path: 'validate_data.npy',
+                              column : 127,
+                              one_hot: 1
+                },
+                'test'  : !obj:dataset.TestDataset {
+                              path: 'test_data.npy',
+                              column : 127,
+                              one_hot: 1
+                },
+        },
+        cost: !obj:log_reg.LogisticRegressionCost {},
+        termination_criterion: !obj:pylearn2.termination_criteria.EpochCounter {
+            max_epochs: 15
+        },
+    },
+}
