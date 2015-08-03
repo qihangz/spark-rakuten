@@ -37,7 +37,7 @@ def get_katakana_phrase_pos(tokens):
 	return result
 
 def get_english_phrase_pos(tokens):
-	indicators = [is_english(token) for token in tokens]
+	indicators = [token and is_english(token) for token in tokens]
 	pos = []
 	result = []
 	for i in range(len(indicators)):
@@ -62,7 +62,7 @@ def generate_katakana_phrase(tokens):
 	katakana_phrase = []
 	pos = get_katakana_phrase_pos(tokens)
 	for index in range(len(pos)):
-		for i in range(pos[index][0], pos[index][1]):
-			for j in range(i-1, pos[index][1]):
-				katakana_phrase.append(" ".join(tokens[i:(j+1)]))
+		for i in range(pos[index][0], pos[index][1]+1):
+			for j in range(i, pos[index][1]+1):
+				katakana_phrase.append("".join(tokens[i:(j+1)]))
 	return katakana_phrase
