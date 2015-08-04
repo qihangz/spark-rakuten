@@ -47,6 +47,15 @@ sortedData.cache()
 CPIR = numpy.zeros(select_n * select_n).reshape(select_n, select_n)
 prob = numpy.zeros(select_n)
 
+def check_occurrence(line):
+	ans = []
+	for i in line:
+		for j in line:
+			key = str(i) + '|' + str(j)
+			ans.append((key, 1))
+	return ans
+
+count_result = numpy.array(sortedData.flatMap(check_occurrence).reduceByKey(lambda x, y : x + y).collect())
 
 """
 X => Y
@@ -54,14 +63,17 @@ p(Y|X) = p(Y U X) / p(X)
 CPIR(Y|X) = (p(Y|X) - p(Y)) / (1 - p(Y)) if p(Y|X) >= P(Y), p(Y) != 1
 CPIR(Y|X) = (p(Y|X) - p(Y)) / (p(Y)) if P(Y) > p(Y|X), p(Y) != 0
 """
-for i in range(select_n):
-	prob[i] = sortedData.filter(lambda line : topFeatures[i] in line).count() / rowCount
 
 for i in range(select_n):
 	#positiveCount = sortedData.filter(lambda line : topFeatures[i] in line).count()
 	#negativeCount = colCount - positiveCount
 	for j in range(select_n):
-		pY_X = sortedData.filter(lambda line : topFeatures[j] in line and topFeatures[i] in line).count() / rowCount / prob[i]
+		key = str(topFeatures[i]) + "|" + str(topFeatures[j])
+		if key in count_result[:,0]:
+			index = numpy.where(count_result[:,0]==key)[0][0]
+			pY_X = int(count_result[index,1]) / rowCount / prob[i]
+		else:
+			pY_X = 0
 		if pY_X >= prob[j]:
 			CPIR[i][j] = (pY_X - prob[j]) / (1 - prob[j])
 		else:
@@ -76,16 +88,10 @@ for item in topFeatures:
 
 f.write(title+"\n")
 
-for i, item in enumerate(output):
+for i, item in enumerate(CPIR):
 	string = ""
 	for element in item:
 		string = string + str(element) + "\t"
 	f.write(str(topFeatures[i]) + "\t" + string + "\n")
 
 f.close()
-
-for i in range(len(output)):
-	for j in range(len(output)):
-		if output[i][j] < -3:
-			print str(topFeatures[i]) + "=>" + str(topFeatures[j])
-			print CPIR[i][j]

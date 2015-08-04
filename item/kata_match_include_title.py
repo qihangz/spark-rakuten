@@ -80,7 +80,7 @@ matches = findMatch(grouped_data)
 end = time.time()
 (end - start)
 
-f = open("match_test_reduced_2csv", "w")
+f = open("match_test_reduced_2.csv", "w")
 
 for match in matches:
 	if match[2] < 2:
