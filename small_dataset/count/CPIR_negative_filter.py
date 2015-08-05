@@ -68,8 +68,6 @@ CPIR(Y|X) = (p(Y|X) - p(Y)) / (p(Y)) if P(Y) > p(Y|X), p(Y) != 0
 """
 
 for i in range(select_n):
-	#positiveCount = sortedData.filter(lambda line : topFeatures[i] in line).count()
-	#negativeCount = colCount - positiveCount
 	for j in range(select_n):
 		key = str(topFeatures[i]) + "|" + str(topFeatures[j])
 		if key in count_result[:,0]:
@@ -83,18 +81,56 @@ for i in range(select_n):
 			CPIR[i][j] = (pY_X - prob[j]) / (prob[j])
 
 
-f = open("CPIR_output.csv", "w")
+cooccurrence = numpy.zeros(select_n * select_n).reshape(select_n, select_n)
+for i in range(select_n):
+	for j in range(select_n):
+		key = str(topFeatures[i]) + "|" + str(topFeatures[j])
+		if key in count_result[:,0]:
+			index = numpy.where(count_result[:,0]==key)[0][0]
+			cooccurrence[i][j] = int(count_result[index,1]) / rowCount
+		else:
+			cooccurrence[i][j] = 0
 
-title = "column\t"
-for item in topFeatures:
-	title = title + str(item) + "\t"
+import pickle
+f = open("translate_index_dict.pkl")
+inverse_index_dict = pickle.load(f)
+f.close()
 
-f.write(title+"\n")
+for i in range(len(topFeatures)):
+	topFeatures[i] = inverse_index_dict[topFeatures[i]]
 
-for i, item in enumerate(CPIR):
-	string = ""
-	for element in item:
-		string = string + str(element) + "\t"
-	f.write(str(topFeatures[i]) + "\t" + string + "\n")
+genres = numpy.array(numpy.loadtxt("test_data_genre_meta", delimiter="\t", dtype="string"))
+
+genre_dict = {}
+
+for genre in genres:
+	genre_dict[int(genre[0])] = genre[1] + '\t' + genre[2]
+
+
+def get_negative(frequency_threshold, independence_threshold):
+	ans = []
+	for i in range(select_n):
+		for j in range(select_n):
+			if CPIR[i][j] < 0:
+				if prob[i] > frequency_threshold:
+					if abs(prob[i]*prob[j]-cooccurrence[i][j]) > independence_threshold:
+						first = genre_dict[topFeatures[i]].split('\t')
+						second = genre_dict[topFeatures[j]].split('\t')
+						result = ( '(' + first[0] + ' -> ' + second[0] +')', 
+							'(' + first[1] + ' -> ' + second[1] +')', 
+							CPIR[i][j])
+						ans.append(result)
+	ans = sorted(ans, key=itemgetter(2))
+	return ans
+
+frequency_threshold = 0.00001
+independence_threshold = 0.00001
+result = get_negative(frequency_threshold, independence_threshold)
+len(result)
+
+f = open("negative_correlation_0.00005", "w")
+
+for line in result:
+	f.write(line[0] + "\t" + line[1] + '\t' + str(line[2]) + "\n")
 
 f.close()
