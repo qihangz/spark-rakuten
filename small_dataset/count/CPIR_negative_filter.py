@@ -120,12 +120,40 @@ def get_negative(frequency_threshold, independence_threshold):
 	ans = sorted(ans, key=itemgetter(2))
 	return ans
 
+def get_positive(frequency_threshold, independence_threshold):
+	ans = []
+	for i in range(select_n):
+		for j in range(select_n):
+			if CPIR[i][j] > 0 and i != j:
+				if prob[i] > frequency_threshold:
+					if abs(prob[i]*prob[j]-cooccurrence[i][j]) > independence_threshold:
+						first = genre_dict[topFeatures[i]].split('\t')
+						second = genre_dict[topFeatures[j]].split('\t')
+						result = ( '(' + first[0] + ' -> ' + second[0] +')', 
+							'(' + first[1] + ' -> ' + second[1] +')', 
+							CPIR[i][j])
+						ans.append(result)
+	ans = sorted(ans, key=itemgetter(2), reverse=True)
+	return ans
+
 frequency_threshold = 0.00001
-independence_threshold = 0.001
+independence_threshold = 0.00001
 result = get_negative(frequency_threshold, independence_threshold)
 len(result)
 
-f = open("negative_correlation_0.0001.csv", "w")
+f = open("negative_correlation_0.00001.csv", "w")
+
+for line in result:
+	f.write(line[0] + "\t" + line[1] + '\t' + str(line[2]) + "\n")
+
+f.close()
+
+frequency_threshold = 0.00001
+independence_threshold = 0.00001
+result = get_positive(frequency_threshold, independence_threshold)
+len(result)
+
+f = open("positive_correlation_0.00001.csv", "w")
 
 for line in result:
 	f.write(line[0] + "\t" + line[1] + '\t' + str(line[2]) + "\n")
